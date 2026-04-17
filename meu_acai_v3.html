@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Sistema Meu Açaí</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --pri:    #4B1D3F;
+  --sec:    #7B2CBF;
+  --dest:   #C77DFF;
+  --fundo:  #F5F5F5;
+  --card:   #FFFFFF;
+  --borda:  #E0D0F0;
+  --texto:  #1A0A2E;
+  --sub:    #6B5080;
+  --verde:  #1B7A4B;
+  --vbg:    #E8F5EE;
+  --verd2:  #2ECC71;
+  --erro:   #C0392B;
+  --ebg:    #FDECEA;
+  --warn:   #D4870A;
+  --wbg:    #FEF3E2;
+  --sombra: 0 2px 12px rgba(75,29,63,0.10);
+  --sombra2:0 4px 24px rgba(75,29,63,0.16);
+  --r:      14px;
+  --r2:     10px;
+  --tr:     all 0.18s ease;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--fundo); color: var(--texto); min-height: 100dvh; font-size: 15px; }
+
+/* HEADER */
+#header { background: linear-gradient(135deg, var(--pri) 0%, #6B1654 50%, var(--sec) 100%); padding: 0; box-shadow: 0 3px 16px rgba(75,29,63,0.35); position: sticky; top: 0; z-index: 100; }
+.header-top { display: flex; align-items: center; gap: 14px; padding: 14px 20px 10px; }
+.logo-wrap { width: 52px; height: 52px; background: rgba(255,255,255,0.12); border-radius: 14px; display: flex; align-items: center; justify-content: center; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; font-size: 26px; }
+.header-text { flex: 1; }
+.header-title { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.3px; line-height: 1.1; }
+.header-sub { font-size: 11px; color: var(--dest); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; font-weight: 600; }
+.sheets-indicator { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8); white-space: nowrap; cursor:pointer; }
+.sheets-dot { width: 7px; height: 7px; border-radius: 50%; background: #ccc; transition: background 0.3s; }
+.sheets-dot.ok  { background: #2ECC71; box-shadow: 0 0 6px #2ECC71; }
+.sheets-dot.err { background: #E74C3C; }
+.sheets-dot.sync { background: #F1C40F; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* NAV */
+nav { display: flex; overflow-x: auto; scrollbar-width: none; padding: 0 12px 12px; gap: 8px; }
+nav::-webkit-scrollbar { display: none; }
+.nav-btn { flex-shrink: 0; padding: 9px 18px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.75); font-size: 13px; font-weight: 700; cursor: pointer; transition: var(--tr); letter-spacing: 0.3px; white-space: nowrap; }
+.nav-btn:active { transform: scale(0.95); }
+.nav-btn.ativo { background: #fff; color: var(--pri); border-color: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+
+/* LAYOUT */
+main { padding: 20px 16px 48px; max-width: 900px; margin: 0 auto; }
+.tela { display: none; }
+.tela.ativa { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* CARD */
+.card { background: var(--card); border-radius: var(--r); box-shadow: var(--sombra); padding: 22px 20px; margin-bottom: 18px; border: 1px solid var(--borda); }
+.card-titulo { font-size: 13px; font-weight: 800; color: var(--pri); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--dest); padding-bottom: 10px; }
+.card-titulo span { font-size: 16px; }
+
+/* FORM */
+.form-row { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.form-row > * { flex: 1; min-width: 140px; }
+.form-group { margin-bottom: 14px; }
+label { display: block; font-size: 11px; font-weight: 700; color: var(--sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 5px; }
+input[type="text"], input[type="number"], input[type="date"], input[type="tel"], select, textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--borda); border-radius: var(--r2); font-size: 15px; font-family: inherit; color: var(--texto); background: #FAFAFA; outline: none; transition: var(--tr); -webkit-appearance: none; appearance: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--sec); background: #fff; box-shadow: 0 0 0 3px rgba(123,44,191,0.12); }
+input::placeholder, textarea::placeholder { color: #BBA8CC; }
+select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234B1D3F' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+select option { background: #fff; color: var(--texto); }
+input[readonly] { background: #F0EAF8; color: var(--sub); cursor: default; }
+
+/* BOTÕES */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 13px 22px; border-radius: 30px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: var(--tr); letter-spacing: 0.3px; font-family: inherit; }
+.btn:active { transform: scale(0.96); }
+.btn-full { width: 100%; padding: 15px; font-size: 15px; }
+.btn-pri { background: linear-gradient(135deg, var(--pri), var(--sec)); color: #fff; box-shadow: 0 4px 16px rgba(75,29,63,0.3); }
+.btn-pri:hover { box-shadow: 0 6px 20px rgba(75,29,63,0.4); }
+.btn-sec { background: var(--fundo); color: var(--pri); border: 1.5px solid var(--dest); }
+.btn-sec:hover { background: #EEE0FF; }
+.btn-verde { background: linear-gradient(135deg, #1B7A4B, #27AE60); color: #fff; box-shadow: 0 4px 16px rgba(27,122,75,0.3); }
+.btn-danger { background: var(--ebg); color: var(--erro); border: 1px solid #F5C6C2; padding: 7px 12px; font-size: 12px; }
+.btn-warn { background: var(--wbg); color: var(--warn); border: 1.5px solid #F0C070; }
+.btn-excel { background: linear-gradient(135deg,#1D6F42,#2E9E5F); color:#fff; box-shadow:0 4px 16px rgba(29,111,66,0.3); }
+.btn-sm { padding: 8px 14px; font-size: 12px; border-radius: 20px; }
+
+/* TABELA */
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--borda); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: linear-gradient(135deg, var(--pri), #6B1654); color: #fff; padding: 11px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; text-align: left; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #F0EAF8; transition: background 0.12s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #FBF7FF; }
+tbody td { padding: 11px 14px; vertical-align: middle; }
+.td-nome { font-weight: 700; color: var(--pri); }
+.td-cat  { color: var(--sub); font-size: 12px; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-un  { background: #EEE0FF; color: var(--sec); }
+.badge-pag { background: #E8F5EE; color: var(--verde); }
+.badge-pag.cred { background: #EEE0FF; color: var(--sec); }
+.badge-pag.deb  { background: #E3F0FF; color: #1A5FA8; }
+.badge-pag.din  { background: var(--wbg); color: var(--warn); }
+.td-valor { font-weight: 800; color: var(--pri); font-size: 14px; }
+
+/* TOAST / STATUS */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--pri); color: #fff; padding: 13px 24px; border-radius: 30px; font-size: 14px; font-weight: 700; box-shadow: var(--sombra2); z-index: 9999; white-space: nowrap; animation: toastIn 0.25s ease; display: none; }
+.toast.ok   { background: var(--verde); }
+.toast.err  { background: var(--erro); }
+.toast.warn { background: var(--warn); }
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.status-inline { padding: 11px 14px; border-radius: var(--r2); font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
+.status-inline.ok   { background: var(--vbg);  color: var(--verde); border: 1px solid #A8D8BC; display: block; }
+.status-inline.err  { background: var(--ebg);  color: var(--erro);  border: 1px solid #F5C6C2; display: block; }
+.status-inline.warn { background: var(--wbg);  color: var(--warn);  border: 1px solid #F0C070; display: block; }
+
+/* COMPRAS ITENS */
+.item-compra { background: #FBF7FF; border: 1.5px solid var(--dest); border-radius: var(--r2); padding: 14px; margin-bottom: 10px; position: relative; animation: fadeIn 0.2s ease; }
+.item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.item-nome { font-weight: 700; color: var(--pri); font-size: 14px; }
+.item-subtotal { font-weight: 800; color: var(--sec); font-size: 15px; }
+.total-box { background: linear-gradient(135deg, var(--pri), var(--sec)); border-radius: var(--r); padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; color: #fff; }
+.total-label { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; opacity: 0.8; }
+.total-valor { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+
+/* ESTOQUE */
+.est-grid-header { display: grid; grid-template-columns: 1fr 90px 90px 90px; gap: 8px; padding: 8px 14px; background: #F0EAF8; border-radius: var(--r2) var(--r2) 0 0; border: 1px solid var(--borda); }
+.est-grid-header span { font-size: 10px; font-weight: 800; color: var(--sub); letter-spacing: 1.2px; text-transform: uppercase; text-align: center; }
+.est-grid-header span:first-child { text-align: left; }
+.est-item { display: grid; grid-template-columns: 1fr 90px 90px 90px; gap: 8px; padding: 10px 14px; align-items: center; border: 1px solid var(--borda); border-top: none; background: #fff; transition: background 0.12s; }
+.est-item:hover { background: #FBF7FF; }
+.est-item:last-child { border-radius: 0 0 var(--r2) var(--r2); }
+.est-nome { font-weight: 700; color: var(--texto); font-size: 13px; }
+.est-cat  { font-size: 11px; color: var(--sub); }
+.est-input { width: 100%; text-align: center; padding: 9px 6px; border: 1.5px solid var(--borda); border-radius: 8px; font-size: 15px; font-weight: 700; color: var(--texto); background: #FAFAFA; outline: none; transition: var(--tr); -moz-appearance: textfield; }
+.est-input::-webkit-outer-spin-button, .est-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.est-input:focus { border-color: var(--sec); background: #fff; box-shadow: 0 0 0 3px rgba(123,44,191,0.12); }
+.est-input:disabled { background: #F0EAF8; color: var(--sub); }
+.est-consumo { text-align: center; font-weight: 800; font-size: 15px; padding: 9px 6px; border-radius: 8px; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+.est-consumo.pos { color: var(--verde); background: var(--vbg); }
+.est-consumo.neg { color: var(--erro);  background: var(--ebg); }
+.est-consumo.zer { color: var(--sub);   background: #F0EAF8; }
+
+/* COMPRA CARD */
+.compra-card { border: 1px solid var(--borda); border-radius: var(--r2); overflow: hidden; margin-bottom: 10px; }
+.compra-head { display: flex; justify-content: space-between; align-items: center; padding: 13px 16px; background: #FBF7FF; cursor: pointer; transition: background 0.15s; }
+.compra-head:hover { background: #F3EAFF; }
+.compra-info-top { font-weight: 700; color: var(--pri); }
+.compra-info-sub { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.compra-total-card { font-size: 18px; font-weight: 900; color: var(--sec); }
+.compra-body { display: none; padding: 14px 16px; border-top: 1px solid var(--borda); }
+.compra-body.open { display: block; animation: fadeIn 0.15s ease; }
+
+/* HISTÓRICO */
+.hist-pill { display: inline-flex; align-items: center; gap: 5px; background: #EEE0FF; color: var(--sec); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 700; margin: 2px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 36px 20px; color: var(--sub); font-size: 14px; font-style: italic; }
+.empty-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.5; }
+
+/* SUMÁRIO */
+.sumario { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 10px; margin-bottom: 18px; }
+.sum-item { background: #fff; border: 1px solid var(--borda); border-radius: var(--r2); padding: 14px; text-align: center; box-shadow: var(--sombra); }
+.sum-label { font-size: 10px; font-weight: 700; color: var(--sub); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.sum-val   { font-size: 22px; font-weight: 900; color: var(--pri); }
+.sum-val.verde { color: var(--verde); }
+.sum-val.roxo  { color: var(--sec); }
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-row .btn { flex: 1; min-width: 120px; }
+.div { height: 1px; background: var(--borda); margin: 16px 0; }
+.search-wrap { position: relative; margin-bottom: 14px; }
+.search-wrap input { padding-left: 38px; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+
+/* MODAL IMPORTAÇÃO */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+.modal-overlay.hidden { display:none; }
+.modal { background:#fff; border-radius: var(--r); padding:28px 24px; max-width:480px; width:100%; box-shadow: var(--sombra2); }
+.modal-titulo { font-size:16px; font-weight:800; color:var(--pri); margin-bottom:8px; }
+.modal-sub { font-size:13px; color:var(--sub); margin-bottom:20px; line-height:1.6; }
+.import-opcoes { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+.import-opcao { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid var(--borda); border-radius:var(--r2); cursor:pointer; transition:var(--tr); }
+.import-opcao:hover { border-color:var(--sec); background:#FBF7FF; }
+.import-opcao input[type=checkbox] { width:18px; height:18px; accent-color:var(--sec); cursor:pointer; flex-shrink:0; }
+.import-opcao-txt { font-weight:700; color:var(--pri); font-size:14px; }
+.import-opcao-sub { font-size:12px; color:var(--sub); }
+.modal-btns { display:flex; gap:10px; }
+.modal-btns .btn { flex:1; }
+
+/* SYNC BANNER */
+.sync-banner { background:var(--wbg); border:1px solid #F0C070; border-radius:var(--r2); padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--warn); font-weight:600; display:none; align-items:center; gap:8px; }
+.sync-banner.visivel { display:flex; }
+
+@media (max-width: 500px) {
+  .est-grid-header, .est-item { grid-template-columns: 1fr 70px 70px 70px; }
+  .form-row > * { min-width: 100%; }
+  .btn-row .btn { min-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- MODAL IMPORTAÇÃO -->
+<div class="modal-overlay hidden" id="modal-import">
+  <div class="modal">
+    <div class="modal-titulo">☁️ Importar do Google Sheets</div>
+    <div class="modal-sub">Selecione o que deseja carregar da planilha para este dispositivo:</div>
+    <div class="import-opcoes">
+      <label class="import-opcao">
+        <input type="checkbox" id="imp-produtos" checked>
+        <div><div class="import-opcao-txt">📦 Produtos</div><div class="import-opcao-sub">Todos os produtos cadastrados</div></div>
+      </label>
+      <label class="import-opcao">
+        <input type="checkbox" id="imp-fornecedores" checked>
+        <div><div class="import-opcao-txt">🏪 Fornecedores</div><div class="import-opcao-sub">Todos os fornecedores cadastrados</div></div>
+      </label>
+      <label class="import-opcao">
+        <input type="checkbox" id="imp-compras" checked>
+        <div><div class="import-opcao-txt">🛒 Compras</div><div class="import-opcao-sub">Histórico completo de compras</div></div>
+      </label>
+      <label class="import-opcao">
+        <input type="checkbox" id="imp-estoque" checked>
+        <div><div class="import-opcao-txt">📊 Estoque Diário</div><div class="import-opcao-sub">Registros de estoque</div></div>
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-sec" onclick="fecharModalImport()">Cancelar</button>
+      <button class="btn btn-pri" onclick="executarImport()">⬇️ Importar Selecionados</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="header-top">
+    <div class="logo-wrap">🍇</div>
+    <div class="header-text">
+      <div class="header-title">Meu Açaí</div>
+      <div class="header-sub">Sistema de Gestão</div>
+    </div>
+    <div class="sheets-indicator" id="sheetsIndicator" onclick="sincronizarAgora()" title="Clique para sincronizar">
+      <div class="sheets-dot" id="sheetsDot"></div>
+      <span id="sheetsLabel">Sheets</span>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-btn ativo" onclick="ir('produtos')">📦 Produtos</button>
+    <button class="nav-btn" onclick="ir('fornecedores')">🏪 Fornecedores</button>
+    <button class="nav-btn" onclick="ir('compras')">🛒 Compras</button>
+    <button class="nav-btn" onclick="ir('estoque')">📊 Estoque Diário</button>
+    <button class="nav-btn" onclick="ir('relatorios')">📁 Relatórios</button>
+    <button class="nav-btn" onclick="ir('config')">⚙️ Config</button>
+  </nav>
+</div>
+
+<main>
+
+<!-- TELA: PRODUTOS -->
+<div id="tela-produtos" class="tela ativa">
+  <div class="sync-banner" id="sync-produtos">🔄 Sincronizando com Google Sheets...</div>
+  <div class="card">
+    <div class="card-titulo"><span>📦</span> Cadastrar Produto</div>
+    <div class="form-row">
+      <div>
+        <label>Nome do Produto</label>
+        <input type="text" id="p-nome" placeholder="Ex: Açaí Belém 1kg" maxlength="80">
+      </div>
+      <div>
+        <label>Categoria</label>
+        <select id="p-cat">
+          <option value="">Selecione...</option>
+          <option>Açaí</option><option>Complementos</option><option>Cremes</option>
+          <option>Embalagens e Descartáveis</option><option>Bebidas</option><option>Laticínio</option>
+          <option>Proteína</option><option>FLV</option><option>Temperos e Condimentos</option>
+          <option>Farináceos</option><option>Açúcares e Adoçantes</option><option>Gorduras e Óleos</option>
+          <option>Refeição Colaborador</option><option>Recheios e Pastas</option>
+          <option>Conservantes e Aditivos</option><option>Essências e Aromas</option>
+          <option>Sementes e Grãos</option><option>Itens de Limpeza</option>
+          <option>Higiene</option><option>Carboidratos e Raízes</option>
+        </select>
+      </div>
+      <div>
+        <label>Unidade</label>
+        <select id="p-un">
+          <option value="">Un...</option>
+          <option>kg</option><option>g</option><option>L</option><option>ml</option>
+          <option>un</option><option>cx</option><option>pct</option><option>fd</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-pri btn-full" onclick="salvarProduto()">✓ Cadastrar Produto</button>
+    <div class="status-inline" id="st-produto"></div>
+  </div>
+  <div class="card">
+    <div class="card-titulo"><span>📋</span> Produtos Cadastrados <span id="prod-count" style="font-size:12px;font-weight:400;color:var(--sub);text-transform:none;letter-spacing:0"></span></div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar produto..." oninput="filtrarProdutos(this.value)">
+    </div>
+    <div id="lista-produtos"><div class="empty"><div class="empty-icon">📦</div>Nenhum produto cadastrado.</div></div>
+  </div>
+</div>
+
+<!-- TELA: FORNECEDORES -->
+<div id="tela-fornecedores" class="tela">
+  <div class="sync-banner" id="sync-fornecedores">🔄 Sincronizando com Google Sheets...</div>
+  <div class="card">
+    <div class="card-titulo"><span>🏪</span> Cadastrar Fornecedor</div>
+    <div class="form-row">
+      <div>
+        <label>Nome do Fornecedor</label>
+        <input type="text" id="f-nome" placeholder="Nome da empresa / pessoa" maxlength="80">
+      </div>
+      <div>
+        <label>Contato (WhatsApp / Tel)</label>
+        <input type="tel" id="f-cont" placeholder="(00) 00000-0000" maxlength="20">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Observações</label>
+      <input type="text" id="f-obs" placeholder="Dias de entrega, produtos principais..." maxlength="120">
+    </div>
+    <button class="btn btn-pri btn-full" onclick="salvarFornecedor()">✓ Cadastrar Fornecedor</button>
+    <div class="status-inline" id="st-forn"></div>
+  </div>
+  <div class="card">
+    <div class="card-titulo"><span>📋</span> Fornecedores <span id="forn-count" style="font-size:12px;font-weight:400;color:var(--sub);text-transform:none;letter-spacing:0"></span></div>
+    <div id="lista-fornecedores"><div class="empty"><div class="empty-icon">🏪</div>Nenhum fornecedor cadastrado.</div></div>
+  </div>
+</div>
+
+<!-- TELA: COMPRAS -->
+<div id="tela-compras" class="tela">
+  <div class="sync-banner" id="sync-compras">🔄 Sincronizando com Google Sheets...</div>
+  <div class="card">
+    <div class="card-titulo"><span>🛒</span> Registrar Compra</div>
+    <div class="form-row">
+      <div><label>Data</label><input type="date" id="c-data"></div>
+      <div>
+        <label>Fornecedor</label>
+        <select id="c-forn"><option value="">Selecione o fornecedor...</option></select>
+      </div>
+      <div>
+        <label>Forma de Pagamento</label>
+        <select id="c-pag" onchange="toggleDataPag(this.value)">
+          <option value="">Pagamento...</option>
+          <option>PIX</option><option>Dinheiro</option><option>Crédito</option>
+          <option>Débito</option><option>A Prazo</option><option>Boleto</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row" id="row-datapag" style="display:none;margin-bottom:14px">
+      <div>
+        <label>📅 Data Prevista de Pagamento</label>
+        <input type="date" id="c-datapag">
+      </div>
+      <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+        <div style="background:var(--wbg);border:1px solid #F0C070;border-radius:var(--r2);padding:10px 14px;font-size:12px;color:var(--warn);font-weight:600;width:100%">
+          ⚠️ Compra a prazo — informe o vencimento
+        </div>
+      </div>
+    </div>
+    <div class="div"></div>
+    <div class="card-titulo" style="margin-bottom:12px"><span>🧾</span> Itens da Compra</div>
+    <div id="itens-lista"></div>
+    <button class="btn btn-sec btn-full" onclick="addItem()" style="margin-bottom:14px;border-style:dashed">+ Adicionar Item</button>
+    <div class="total-box">
+      <div><div class="total-label">Total da Compra</div></div>
+      <div class="total-valor" id="c-total">R$ 0,00</div>
+    </div>
+    <button class="btn btn-pri btn-full" onclick="salvarCompra()">✓ Salvar Compra</button>
+    <div class="status-inline" id="st-compra"></div>
+  </div>
+  <div class="card">
+    <div class="card-titulo"><span>📜</span> Histórico de Compras <span id="comp-count" style="font-size:12px;font-weight:400;color:var(--sub);text-transform:none;letter-spacing:0"></span></div>
+    <div class="search-wrap" style="margin-bottom:14px">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar por fornecedor, produto ou pagamento..." oninput="filtrarCompras(this.value)">
+    </div>
+    <div id="lista-compras"><div class="empty"><div class="empty-icon">🛒</div>Nenhuma compra registrada.</div></div>
+  </div>
+</div>
+
+<!-- TELA: ESTOQUE DIÁRIO -->
+<div id="tela-estoque" class="tela">
+  <div class="sync-banner" id="sync-estoque">🔄 Sincronizando com Google Sheets...</div>
+  <div class="card">
+    <div class="card-titulo"><span>📊</span> Estoque Diário</div>
+    <div class="form-row" style="align-items:flex-end">
+      <div><label>Data do Registro</label><input type="date" id="e-data"></div>
+      <div><button class="btn btn-sec" style="width:100%;margin-top:0" onclick="carregarEstoque()">🔄 Carregar / Atualizar</button></div>
+    </div>
+    <div class="sumario" id="est-sumario" style="display:none">
+      <div class="sum-item"><div class="sum-label">Compras do Dia</div><div class="sum-val roxo" id="est-sum-comp">R$ 0,00</div></div>
+      <div class="sum-item"><div class="sum-label">Produtos com Consumo</div><div class="sum-val verde" id="est-sum-cons">0</div></div>
+      <div class="sum-item"><div class="sum-label">Status</div><div class="sum-val" id="est-sum-status" style="font-size:13px">—</div></div>
+    </div>
+    <div id="est-tabela"><div class="empty"><div class="empty-icon">📊</div>Cadastre produtos e selecione uma data.</div></div>
+    <div class="div"></div>
+    <div class="btn-row" id="est-btns" style="display:none">
+      <button class="btn btn-warn" onclick="salvarParcial()">💾 Salvar Inicial</button>
+      <button class="btn btn-verde" onclick="salvarFinal()">✅ Salvar Final + Consumo</button>
+    </div>
+    <div class="status-inline" id="st-estoque"></div>
+  </div>
+  <div class="card">
+    <div class="card-titulo"><span>📅</span> Registros Anteriores</div>
+    <div id="lista-registros"><div class="empty"><div class="empty-icon">📅</div>Nenhum registro salvo.</div></div>
+  </div>
+</div>
+
+<!-- TELA: RELATÓRIOS -->
+<div id="tela-relatorios" class="tela">
+  <div class="card">
+    <div class="card-titulo"><span>📁</span> Exportar Relatórios Excel</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:20px;line-height:1.6">
+      Gera um arquivo <b>.xlsx</b> com os dados selecionados. Cada item vira uma aba separada na planilha.
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+
+      <div class="card" style="margin-bottom:0;padding:16px;border-color:var(--dest)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:800;color:var(--pri);font-size:14px">🛒 Compras Completas</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">Cabeçalho + todos os itens detalhados</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div><label style="margin-bottom:3px">De</label><input type="date" id="rel-comp-de" style="padding:8px 10px;font-size:13px"></div>
+            <div><label style="margin-bottom:3px">Até</label><input type="date" id="rel-comp-ate" style="padding:8px 10px;font-size:13px"></div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="exportarCompras()">⬇️ Baixar Excel</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;padding:16px;border-color:var(--dest)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:800;color:var(--pri);font-size:14px">📊 Estoque Diário</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">Todos os registros de consumo por data</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div><label style="margin-bottom:3px">De</label><input type="date" id="rel-est-de" style="padding:8px 10px;font-size:13px"></div>
+            <div><label style="margin-bottom:3px">Até</label><input type="date" id="rel-est-ate" style="padding:8px 10px;font-size:13px"></div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="exportarEstoque()">⬇️ Baixar Excel</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;padding:16px;border-color:var(--dest)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:800;color:var(--pri);font-size:14px">📦 Produtos Cadastrados</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">Lista completa com histórico de preços</div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="exportarProdutos()">⬇️ Baixar Excel</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;padding:16px;border-color:var(--dest)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:800;color:var(--pri);font-size:14px">🏪 Fornecedores</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">Lista de todos os fornecedores</div>
+          </div>
+          <button class="btn btn-excel btn-sm" onclick="exportarFornecedores()">⬇️ Baixar Excel</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:0;padding:16px;background:linear-gradient(135deg,#F3EAFF,#EEE0FF);border-color:var(--sec)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-weight:800;color:var(--pri);font-size:14px">📋 Relatório Completo</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px">Tudo em um único arquivo (todas as abas)</div>
+          </div>
+          <button class="btn btn-pri btn-sm" onclick="exportarTudo()">⬇️ Exportar Tudo</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="status-inline" id="st-relatorio"></div>
+  </div>
+</div>
+
+<!-- TELA: CONFIGURAÇÕES -->
+<div id="tela-config" class="tela">
+  <div class="card">
+    <div class="card-titulo"><span>☁️</span> Integração Google Sheets</div>
+    <div class="form-group">
+      <label>URL do Web App (Apps Script)</label>
+      <input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/..." style="font-size:13px">
+      <div style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.6">
+        Cole aqui a URL gerada ao publicar seu Apps Script como <b>Web App</b>.<br>
+        Acesse: <b>Extensões → Apps Script → Implantar → Novo implante → Web App</b>
+      </div>
+    </div>
+    <button class="btn btn-pri btn-full" onclick="salvarConfig()">✓ Salvar e Conectar</button>
+    <div class="status-inline" id="st-config"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span>🔗</span> Status da Conexão</div>
+    <div style="display:flex;align-items:center;gap:14px;padding:6px 0;margin-bottom:16px">
+      <div class="sheets-dot" id="cfgDot" style="width:14px;height:14px"></div>
+      <div>
+        <div id="cfg-status-txt" style="font-weight:700;color:var(--pri);font-size:14px">Não verificado</div>
+        <div id="cfg-url-show" style="font-size:11px;color:var(--sub);margin-top:2px;word-break:break-all">Nenhuma URL configurada</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-sec" onclick="sincronizarAgora()" style="flex:1">🔄 Sincronizar Agora</button>
+      <button class="btn btn-warn" onclick="abrirModalImport()" style="flex:1">⬇️ Importar do Sheets</button>
+    </div>
+    <div class="status-inline" id="st-cfg-teste"></div>
+  </div>
+
+  <div class="card" style="background:#FBF7FF;border-color:var(--dest)">
+    <div class="card-titulo"><span>⚠️</span> Dados Locais</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.6">
+      Os dados ficam no Google Sheets (fonte principal) e em cache local neste dispositivo para acesso rápido. Ao sincronizar, o Sheets sempre prevalece.
+    </div>
+    <button class="btn btn-danger" onclick="limparDados()" style="width:100%">🗑 Limpar Cache Local</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG / UTILS
+// ═══════════════════════════════════════════
+const getSheetsUrl = () => localStorage.getItem('cfg_sheets_url') || '';
+const $ = id => document.getElementById(id);
+const hoje = () => new Date().toISOString().slice(0,10);
+// IDs numéricos sequenciais por tipo
+// prefixos: produto=1xxxx, fornecedor=2xxxx, compra=3xxxx, estoque=4xxxx
+function uid(tipo) {
+  const prefixos = { produto: 10000, fornecedor: 20000, compra: 30000, estoque: 40000 };
+  const base = prefixos[tipo] || 50000;
+  const chave = 'seq_' + tipo;
+  const atual = parseInt(localStorage.getItem(chave) || base) + 1;
+  localStorage.setItem(chave, atual);
+  return String(atual);
+}
+function sincronizarContadores(tipo, ids) {
+  const prefixos = { produto: 10000, fornecedor: 20000, compra: 30000, estoque: 40000 };
+  const chave = 'seq_' + tipo;
+  const numeros = ids.map(id => parseInt(id)).filter(n => !isNaN(n));
+  if (!numeros.length) return;
+  const max = Math.max(...numeros);
+  const atual = parseInt(localStorage.getItem(chave) || prefixos[tipo]);
+  if (max > atual) localStorage.setItem(chave, max);
+}
+const fmtBRL = v => (+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtData = d => { if(!d) return ''; const [y,m,dia]=d.split('-'); return `${dia}/${m}/${y}`; };
+
+function ld(k)   { try { return JSON.parse(localStorage.getItem(k)||'[]'); } catch { return []; } }
+function sv(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+let toastTimer;
+function toast(msg, tipo='ok', dur=3500) {
+  const el = $('toast');
+  el.textContent = msg; el.className = `toast ${tipo}`; el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.display = 'none'; }, dur);
+}
+
+function setStatus(id, tipo, msg) {
+  const el = $(id); if (!el) return;
+  el.className = `status-inline ${tipo}`; el.textContent = msg;
+  setTimeout(() => { el.className = 'status-inline'; }, 5000);
+}
+
+function showSync(tela, show) {
+  const el = $(`sync-${tela}`);
+  if (el) el.classList.toggle('visivel', show);
+}
+
+// ═══════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════
+function ir(nome) {
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  $(`tela-${nome}`).classList.add('ativa');
+  event.currentTarget.classList.add('ativo');
+  if (nome==='produtos')     { renderProdutos(); }
+  if (nome==='fornecedores') { renderFornecedores(); }
+  if (nome==='compras')      { renderSelectForn(); renderCompras(); if(!$('c-data').value) $('c-data').value=hoje(); }
+  if (nome==='estoque')      { if(!$('e-data').value) $('e-data').value=hoje(); carregarEstoque(); renderRegistros(); }
+  if (nome==='config')       { carregarConfig(); }
+  if (nome==='relatorios')   { initRelatorios(); }
+}
+
+// ═══════════════════════════════════════════
+// SHEETS — ENVIAR (POST)
+// ═══════════════════════════════════════════
+function setSheetsStatus(estado) {
+  // estado: 'ok' | 'err' | 'sync'
+  const dot = $('sheetsDot'); const lbl = $('sheetsLabel');
+  dot.className = `sheets-dot ${estado}`;
+  lbl.textContent = estado === 'ok' ? 'Sheets ✓' : estado === 'sync' ? 'Sincronizando…' : 'Sheets ✗';
+}
+
+async function enviarSheets(tipo, dados) {
+  const url = getSheetsUrl();
+  if (!url) { setSheetsStatus('err'); return false; }
+  try {
+    setSheetsStatus('sync');
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ tipo, dados })
+    });
+    setSheetsStatus('ok');
+    return true;
+  } catch(e) {
+    setSheetsStatus('err');
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════
+// SHEETS — LER (GET com JSONP)
+// ═══════════════════════════════════════════
+function lerSheets(tipo) {
+  return new Promise((resolve) => {
+    const url = getSheetsUrl();
+    if (!url) return resolve(null);
+    const cbName = `_cb_${tipo}_${Date.now()}`;
+    const script = document.createElement('script');
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(null);
+    }, 12000);
+    window[cbName] = (data) => {
+      clearTimeout(timeout);
+      delete window[cbName];
+      try { document.body.removeChild(script); } catch {}
+      resolve(data);
+    };
+    script.src = `${url}?tipo=${tipo}&callback=${cbName}`;
+    script.onerror = () => { clearTimeout(timeout); delete window[cbName]; resolve(null); };
+    document.body.appendChild(script);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SINCRONIZAÇÃO BIDIRECIONAL
+// ═══════════════════════════════════════════
+async function sincronizarAgora() {
+  const url = getSheetsUrl();
+  if (!url) { toast('⚠ Configure a URL do Sheets primeiro.', 'warn'); ir_config(); return; }
+  setSheetsStatus('sync');
+  toast('🔄 Sincronizando...', 'warn', 8000);
+
+  let algumOk = false;
+  const tipos = ['produtos','fornecedores','compras','estoque'];
+
+  for (const tipo of tipos) {
+    const chave = tipo === 'estoque' ? 'estoque_diario' : tipo;
+    showSync(tipo === 'estoque' ? 'estoque' : tipo, true);
+    const dados = await lerSheets(tipo);
+    if (dados && Array.isArray(dados)) {
+      sv(chave, dados);
+      sincronizarContadores(tipo === 'estoque' ? 'estoque' : tipo.slice(0,-1)||tipo, dados.map(x=>x.id));
+      algumOk = true;
+    }
+    showSync(tipo === 'estoque' ? 'estoque' : tipo, false);
+  }
+
+  setSheetsStatus(algumOk ? 'ok' : 'err');
+  toast(algumOk ? '✅ Sincronizado com Sheets!' : '⚠ Não foi possível ler o Sheets. Verifique a URL e o script.', algumOk ? 'ok' : 'err', 4000);
+
+  // Atualiza tela atual
+  renderProdutos(); renderFornecedores(); renderCompras();
+  if ($('e-data').value) { carregarEstoque(); renderRegistros(); }
+}
+
+function ir_config() {
+  // navega para config sem evento
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('ativo'));
+  $('tela-config').classList.add('ativa');
+  carregarConfig();
+}
+
+// ═══════════════════════════════════════════
+// MODAL IMPORTAÇÃO
+// ═══════════════════════════════════════════
+function abrirModalImport() {
+  const url = getSheetsUrl();
+  if (!url) { toast('⚠ Configure a URL primeiro.', 'warn'); return; }
+  $('modal-import').classList.remove('hidden');
+}
+function fecharModalImport() { $('modal-import').classList.add('hidden'); }
+
+async function executarImport() {
+  fecharModalImport();
+  const impProd  = $('imp-produtos').checked;
+  const impForn  = $('imp-fornecedores').checked;
+  const impComp  = $('imp-compras').checked;
+  const impEst   = $('imp-estoque').checked;
+
+  if (!impProd && !impForn && !impComp && !impEst) {
+    toast('Selecione pelo menos um item para importar.', 'warn'); return;
+  }
+
+  setSheetsStatus('sync');
+  toast('⬇️ Importando do Sheets...', 'warn', 15000);
+  let importados = [];
+
+  if (impProd) {
+    const d = await lerSheets('produtos');
+    if (d && Array.isArray(d)) {
+      sv('produtos', d);
+      sincronizarContadores('produto', d.map(x=>x.id));
+      importados.push('Produtos');
+    }
+  }
+  if (impForn) {
+    const d = await lerSheets('fornecedores');
+    if (d && Array.isArray(d)) {
+      sv('fornecedores', d);
+      sincronizarContadores('fornecedor', d.map(x=>x.id));
+      importados.push('Fornecedores');
+    }
+  }
+  if (impComp) {
+    const d = await lerSheets('compras');
+    if (d && Array.isArray(d)) {
+      sv('compras', d);
+      sincronizarContadores('compra', d.map(x=>x.id));
+      importados.push('Compras');
+    }
+  }
+  if (impEst) {
+    const d = await lerSheets('estoque');
+    if (d && Array.isArray(d)) {
+      sv('estoque_diario', d);
+      sincronizarContadores('estoque', d.map(x=>x.id));
+      importados.push('Estoque');
+    }
+  }
+
+  setSheetsStatus(importados.length ? 'ok' : 'err');
+  if (importados.length) {
+    toast(`✅ Importado: ${importados.join(', ')}`, 'ok', 4000);
+    renderProdutos(); renderFornecedores(); renderCompras();
+    if ($('e-data').value) { carregarEstoque(); renderRegistros(); }
+  } else {
+    toast('⚠ Nada importado. Verifique a conexão.', 'err');
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+function carregarConfig() {
+  const url = getSheetsUrl();
+  $('cfg-url').value = url;
+  atualizarStatusConfig(url);
+}
+
+function atualizarStatusConfig(url) {
+  const dot = $('cfgDot'), txt = $('cfg-status-txt'), show = $('cfg-url-show');
+  if (url) {
+    dot.style.cssText = 'width:14px;height:14px;background:#2ECC71;box-shadow:0 0 6px #2ECC71;border-radius:50%';
+    txt.textContent = '✅ URL configurada — Sheets ativo';
+    show.textContent = url.length > 70 ? url.slice(0,70)+'…' : url;
+  } else {
+    dot.style.cssText = 'width:14px;height:14px;background:#E74C3C;border-radius:50%';
+    txt.textContent = 'Nenhuma URL configurada';
+    show.textContent = 'Adicione a URL do seu Web App acima.';
+  }
+}
+
+async function salvarConfig() {
+  const url = $('cfg-url').value.trim();
+  if (url && !url.startsWith('https://script.google.com/macros/s/')) {
+    return setStatus('st-config','err','⚠ URL inválida. Deve começar com https://script.google.com/macros/s/');
+  }
+  const urlAntiga = getSheetsUrl();
+  localStorage.setItem('cfg_sheets_url', url);
+  atualizarStatusConfig(url);
+  setSheetsStatus(url ? 'ok' : 'err');
+  setStatus('st-config','ok', url ? '✓ URL salva! Use "Importar do Sheets" para carregar os dados.' : '✓ URL removida.');
+  toast(url ? '☁️ Sheets configurado!' : '⚠ URL removida.', url ? 'ok' : 'warn');
+
+  // Se é uma URL nova, oferecer importação
+  if (url && url !== urlAntiga) {
+    setTimeout(() => abrirModalImport(), 800);
+  }
+}
+
+function limparDados() {
+  if (!confirm('⚠️ Apaga o cache local (produtos, compras, estoque).\n\nTem certeza?')) return;
+  if (!confirm('Confirmar limpeza do cache local?')) return;
+  const url = getSheetsUrl();
+  localStorage.clear();
+  if (url) localStorage.setItem('cfg_sheets_url', url);
+  toast('🗑 Cache limpo. Use Sincronizar para recarregar.', 'warn');
+  renderProdutos();
+}
+
+// ═══════════════════════════════════════════
+// PRODUTOS
+// ═══════════════════════════════════════════
+async function salvarProduto() {
+  const nome = $('p-nome').value.trim();
+  const cat  = $('p-cat').value;
+  const un   = $('p-un').value;
+  if (!nome) return setStatus('st-produto','err','⚠ Informe o nome do produto.');
+  if (!cat)  return setStatus('st-produto','err','⚠ Selecione a categoria.');
+  if (!un)   return setStatus('st-produto','err','⚠ Selecione a unidade.');
+  const prods = ld('produtos');
+  if (prods.find(p=>p.nome.toLowerCase()===nome.toLowerCase()))
+    return setStatus('st-produto','err','⚠ Produto com esse nome já existe.');
+  const novo = { id: uid('produto'), nome, categoria: cat, unidade: un, historico: [], ultimoPreco: null };
+  prods.push(novo);
+  sv('produtos', prods);
+  $('p-nome').value=''; $('p-cat').value=''; $('p-un').value='';
+  renderProdutos();
+  setStatus('st-produto','ok',`✓ "${nome}" cadastrado com sucesso!`);
+  const ok = await enviarSheets('produto', novo);
+  toast(ok ? '☁ Produto enviado ao Sheets!' : '⚠ Salvo local. Sheets indisponível.', ok?'ok':'warn');
+}
+
+function excluirProduto(id) {
+  if (!confirm('Excluir este produto?')) return;
+  sv('produtos', ld('produtos').filter(p=>p.id!==id));
+  renderProdutos();
+  toast('Produto excluído.','warn');
+}
+
+let _filtro = '';
+function filtrarProdutos(v) { _filtro=v.toLowerCase(); renderProdutos(); }
+
+function renderProdutos() {
+  const todos = ld('produtos');
+  const prods = todos.filter(p=>!_filtro||p.nome.toLowerCase().includes(_filtro)||p.categoria.toLowerCase().includes(_filtro));
+  $('prod-count').textContent = todos.length ? `(${todos.length} cadastrados)` : '';
+  const el = $('lista-produtos');
+  if (!prods.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Nenhum produto encontrado.</div>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Produto</th><th>Categoria</th><th>Un</th><th>Último Preço</th><th>Últimas 2 Compras</th><th></th></tr></thead>
+    <tbody>${prods.sort((a,b)=>a.nome.localeCompare(b.nome)).map(p=>`
+      <tr>
+        <td class="td-nome">${p.nome}</td>
+        <td class="td-cat">${p.categoria}</td>
+        <td><span class="badge badge-un">${p.unidade}</span></td>
+        <td class="td-valor">${p.ultimoPreco ? fmtBRL(p.ultimoPreco) : '<span style="color:var(--sub)">—</span>'}</td>
+        <td>${(p.historico||[]).slice(-2).map(h=>`<span class="hist-pill">${h.fornecedor} · ${fmtBRL(h.preco)}</span>`).join('')||'<span style="color:var(--sub);font-size:12px">sem compras</span>'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="excluirProduto('${p.id}')">✕</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// ═══════════════════════════════════════════
+// FORNECEDORES
+// ═══════════════════════════════════════════
+async function salvarFornecedor() {
+  const nome = $('f-nome').value.trim();
+  const cont = $('f-cont').value.trim();
+  const obs  = $('f-obs').value.trim();
+  if (!nome) return setStatus('st-forn','err','⚠ Informe o nome do fornecedor.');
+  const forns = ld('fornecedores');
+  if (forns.find(f=>f.nome.toLowerCase()===nome.toLowerCase()))
+    return setStatus('st-forn','err','⚠ Fornecedor já cadastrado.');
+  const novo = { id: uid('fornecedor'), nome, contato: cont, obs };
+  forns.push(novo);
+  sv('fornecedores', forns);
+  $('f-nome').value=''; $('f-cont').value=''; $('f-obs').value='';
+  renderFornecedores();
+  setStatus('st-forn','ok',`✓ "${nome}" cadastrado!`);
+  const ok = await enviarSheets('fornecedor', novo);
+  toast(ok ? '☁ Fornecedor enviado ao Sheets!' : '⚠ Salvo local. Sheets indisponível.', ok?'ok':'warn');
+}
+
+function excluirFornecedor(id) {
+  if (!confirm('Excluir este fornecedor?')) return;
+  sv('fornecedores', ld('fornecedores').filter(f=>f.id!==id));
+  renderFornecedores();
+  toast('Fornecedor excluído.','warn');
+}
+
+function renderFornecedores() {
+  const forns = ld('fornecedores');
+  $('forn-count').textContent = forns.length ? `(${forns.length})` : '';
+  const el = $('lista-fornecedores');
+  if (!forns.length) { el.innerHTML='<div class="empty"><div class="empty-icon">🏪</div>Nenhum fornecedor cadastrado.</div>'; return; }
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr><th>Nome</th><th>Contato</th><th>Observações</th><th></th></tr></thead>
+    <tbody>${forns.map(f=>`
+      <tr>
+        <td class="td-nome">${f.nome}</td>
+        <td>${f.contato||'—'}</td>
+        <td class="td-cat">${f.obs||'—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="excluirFornecedor('${f.id}')">✕</button></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+}
+
+// ═══════════════════════════════════════════
+// COMPRAS
+// ═══════════════════════════════════════════
+let _itens = [];
+
+function renderSelectForn() {
+  const forns = ld('fornecedores');
+  const sel = $('c-forn'), cur = sel.value;
+  sel.innerHTML = '<option value="">Selecione o fornecedor...</option>' +
+    forns.map(f=>`<option value="${f.id}" ${f.id===cur?'selected':''}>${f.nome}</option>`).join('');
+}
+
+function buildSelectProd(selId='') {
+  const prods = ld('produtos').sort((a,b)=>a.nome.localeCompare(b.nome));
+  return '<option value="">Selecione o produto...</option>' +
+    prods.map(p=>`<option value="${p.id}" data-un="${p.unidade}" data-preco="${p.ultimoPreco||''}" ${p.id===selId?'selected':''}>${p.nome} (${p.unidade})</option>`).join('');
+}
+
+function addItem() {
+  if (!ld('produtos').length) { toast('Cadastre produtos primeiro.','err'); return; }
+  _itens.push({ prodId:'', prodNome:'', qtd:'', un:'', custo:'' });
+  renderItens();
+}
+
+function renderItens() {
+  const el = $('itens-lista');
+  if (!_itens.length) {
+    el.innerHTML='<div class="empty" style="padding:14px"><div class="empty-icon" style="font-size:22px">🧾</div>Nenhum item adicionado.</div>';
+    calcTotal(); return;
+  }
+  el.innerHTML = _itens.map((it,i)=>`
+    <div class="item-compra">
+      <div class="item-header">
+        <span class="item-nome">${it.prodNome||'Novo item'}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="item-subtotal" id="sub-${i}">${it.qtd&&it.custo?fmtBRL(it.qtd*it.custo):'—'}</span>
+          <button class="btn btn-danger btn-sm" onclick="remItem(${i})">✕</button>
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <label>Produto</label>
+        <select onchange="onProd(${i},this)">${buildSelectProd(it.prodId)}</select>
+      </div>
+      <div class="form-row">
+        <div><label>Quantidade</label><input type="number" placeholder="0" value="${it.qtd||''}" min="0" step="0.001" oninput="_itens[${i}].qtd=this.value;updSub(${i})"></div>
+        <div><label>Unidade</label><input type="text" id="un-${i}" value="${it.un||''}" readonly></div>
+        <div><label>Custo Unitário (R$)</label><input type="number" placeholder="0,00" value="${it.custo||''}" min="0" step="0.01" oninput="_itens[${i}].custo=this.value;updSub(${i})"></div>
+      </div>
+    </div>`).join('');
+  calcTotal();
+}
+
+function onProd(i, sel) {
+  const opt = sel.options[sel.selectedIndex];
+  _itens[i].prodId = sel.value;
+  _itens[i].prodNome = opt.text.replace(/\s*\(.*\)$/,'');
+  _itens[i].un = opt.dataset.un||'';
+  if (opt.dataset.preco) _itens[i].custo = opt.dataset.preco;
+  renderItens();
+}
+
+function updSub(i) {
+  const sub = (parseFloat(_itens[i].qtd)||0)*(parseFloat(_itens[i].custo)||0);
+  const el = $(`sub-${i}`);
+  if (el) el.textContent = sub>0 ? fmtBRL(sub) : '—';
+  calcTotal();
+}
+
+function remItem(i) { _itens.splice(i,1); renderItens(); }
+
+function calcTotal() {
+  const t = _itens.reduce((s,it)=>s+(parseFloat(it.qtd)||0)*(parseFloat(it.custo)||0),0);
+  $('c-total').textContent = fmtBRL(t);
+}
+
+async function salvarCompra() {
+  const data   = $('c-data').value;
+  const fornId = $('c-forn').value;
+  const pag    = $('c-pag').value;
+  if (!data)   return setStatus('st-compra','err','⚠ Informe a data.');
+  if (!fornId) return setStatus('st-compra','err','⚠ Selecione o fornecedor.');
+  if (!pag)    return setStatus('st-compra','err','⚠ Selecione o pagamento.');
+  const dataPag = $('c-datapag')?.value || '';
+  if (pag === 'A Prazo' && !dataPag) return setStatus('st-compra','err','⚠ Informe a data prevista de pagamento.');
+  const itensOk = _itens.filter(it=>it.prodId && parseFloat(it.qtd)>0);
+  if (!itensOk.length) return setStatus('st-compra','err','⚠ Adicione pelo menos um item completo.');
+
+  const fornNome = ld('fornecedores').find(f=>f.id===fornId)?.nome||'—';
+  const total = itensOk.reduce((s,it)=>s+(parseFloat(it.qtd)||0)*(parseFloat(it.custo)||0),0);
+
+  const compra = {
+    id: uid('compra'), data, fornId, fornNome, pagamento: pag, dataPagamento: dataPag,
+    itens: itensOk.map(it=>({ prodId:it.prodId, prodNome:it.prodNome, qtd:+it.qtd, un:it.un, custo:+(it.custo||0), total:(+it.qtd)*(+(it.custo||0)) })),
+    total
+  };
+
+  const compras = ld('compras');
+  compras.push(compra);
+  sv('compras', compras);
+
+  // Atualiza histórico de preços (mantém só últimas 5 entradas)
+  const prods = ld('produtos');
+  compra.itens.forEach(it=>{
+    const p = prods.find(x=>x.id===it.prodId);
+    if (!p) return;
+    if (!p.historico) p.historico=[];
+    p.historico.push({ data, fornecedor: fornNome, preco: it.custo });
+    if (p.historico.length > 5) p.historico = p.historico.slice(-5);
+    p.ultimoPreco = it.custo;
+  });
+  sv('produtos', prods);
+
+  _itens=[];
+  $('c-forn').value=''; $('c-pag').value=''; $('c-data').value=hoje();
+  const dpEl = $('c-datapag'); if(dpEl) dpEl.value='';
+  const dpRow = $('row-datapag'); if(dpRow) dpRow.style.display='none';
+  renderItens(); renderCompras();
+  setStatus('st-compra','ok',`✓ Compra salva! Total: ${fmtBRL(total)}`);
+
+  const ok = await enviarSheets('compra', compra);
+  toast(ok ? '☁ Enviado para Google Sheets!' : '⚠ Salvo localmente. Sheets offline.', ok?'ok':'warn');
+}
+
+function toggleDataPag(val) {
+  const row = $('row-datapag');
+  if (row) row.style.display = val === 'A Prazo' ? 'flex' : 'none';
+}
+
+let _filtroComp = '';
+function filtrarCompras(v) { _filtroComp = v.toLowerCase(); renderCompras(); }
+
+function renderCompras() {
+  const todos = ld('compras').sort((a,b)=>b.data.localeCompare(a.data));
+  const compras = _filtroComp ? todos.filter(c =>
+    c.fornNome?.toLowerCase().includes(_filtroComp) ||
+    c.pagamento?.toLowerCase().includes(_filtroComp) ||
+    (c.itens||[]).some(it => it.prodNome?.toLowerCase().includes(_filtroComp))
+  ) : todos;
+  const cCount = $('comp-count');
+  if (cCount) cCount.textContent = todos.length ? `(${todos.length} compras)` : '';
+  const el = $('lista-compras');
+  if (!compras.length) { el.innerHTML='<div class="empty"><div class="empty-icon">🛒</div>Nenhuma compra registrada.</div>'; return; }
+
+  // Agrupa por compra, expande todos os itens em linhas
+  const rows = [];
+  compras.forEach(c => {
+    const itens = c.itens || [];
+    const prazo = c.pagamento === 'A Prazo' && c.dataPagamento;
+    itens.forEach((it, idx) => {
+      rows.push({
+        isFirst: idx === 0,
+        rowspan: itens.length,
+        c, it,
+        prazo
+      });
+    });
+    if (!itens.length) {
+      // compra sem itens (importada sem detalhes)
+      rows.push({ isFirst: true, rowspan: 1, c, it: null, prazo: false });
+    }
+  });
+
+  el.innerHTML = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Nº</th><th>Data Compra</th><th>Fornecedor</th><th>Pagamento</th><th>Dt. Pgto</th>
+      <th>Produto</th><th>Un</th><th>Qtd</th><th>Custo Unit.</th><th>Total Item</th><th>Total Compra</th><th></th>
+    </tr></thead>
+    <tbody>
+    ${rows.map(r => {
+      const c = r.c, it = r.it;
+      const pag = `<span class="badge badge-pag ${badgePagCls(c.pagamento)}">${c.pagamento}</span>`;
+      const dtPag = c.dataPagamento ? `<span style="color:var(--warn);font-weight:700">${fmtData(c.dataPagamento)}</span>` : '—';
+      if (r.isFirst) {
+        return `<tr style="border-top:2px solid var(--borda)">
+          <td rowspan="${r.rowspan}" style="color:var(--sub);font-size:11px;white-space:nowrap">#${c.id}</td>
+          <td rowspan="${r.rowspan}" style="white-space:nowrap;font-weight:700">${fmtData(c.data)}</td>
+          <td rowspan="${r.rowspan}" class="td-nome">${c.fornNome}</td>
+          <td rowspan="${r.rowspan}">${pag}</td>
+          <td rowspan="${r.rowspan}">${dtPag}</td>
+          ${it ? `
+          <td class="td-nome">${it.prodNome}</td>
+          <td><span class="badge badge-un">${it.un||'—'}</span></td>
+          <td>${it.qtd}</td>
+          <td>${fmtBRL(it.custo)}</td>
+          <td class="td-valor">${fmtBRL(it.total)}</td>` : `<td colspan="5" style="color:var(--sub);font-style:italic">sem itens detalhados</td>`}
+          <td rowspan="${r.rowspan}" class="td-valor" style="font-size:15px;white-space:nowrap">${fmtBRL(c.total)}</td>
+          <td rowspan="${r.rowspan}"><button class="btn btn-danger btn-sm" onclick="excluirCompra('${c.id}')">🗑</button></td>
+        </tr>`;
+      } else {
+        return `<tr>
+          <td class="td-nome">${it ? it.prodNome : ''}</td>
+          <td>${it ? `<span class="badge badge-un">${it.un||'—'}</span>` : ''}</td>
+          <td>${it ? it.qtd : ''}</td>
+          <td>${it ? fmtBRL(it.custo) : ''}</td>
+          <td class="td-valor">${it ? fmtBRL(it.total) : ''}</td>
+        </tr>`;
+      }
+    }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function badgePagCls(p) {
+  if(p==='Crédito') return 'cred';
+  if(p==='Débito')  return 'deb';
+  if(p==='Dinheiro')return 'din';
+  return '';
+}
+function toggleCompra(id) { $(id).classList.toggle('open'); }
+
+function excluirCompra(id) {
+  if(!confirm('Excluir esta compra?')) return;
+  sv('compras', ld('compras').filter(c=>c.id!==id));
+  renderCompras();
+  toast('Compra excluída.','warn');
+}
+
+// ═══════════════════════════════════════════
+// ESTOQUE DIÁRIO
+// ═══════════════════════════════════════════
+function comprasDodia(data) {
+  const map = {};
+  ld('compras').filter(c=>c.data===data).forEach(c=>{
+    c.itens.forEach(it=>{ map[it.prodId]=(map[it.prodId]||0)+it.qtd; });
+  });
+  return map;
+}
+
+function carregarEstoque() {
+  const data  = $('e-data').value;
+  const prods = ld('produtos').sort((a,b)=>a.nome.localeCompare(b.nome));
+  if (!prods.length) {
+    $('est-tabela').innerHTML='<div class="empty"><div class="empty-icon">📦</div>Cadastre produtos primeiro.</div>';
+    $('est-btns').style.display='none'; $('est-sumario').style.display='none'; return;
+  }
+  const regs  = ld('estoque_diario');
+  const reg   = regs.find(r=>r.data===data);
+  const cpDia = comprasDodia(data);
+  const totalComp = ld('compras').filter(c=>c.data===data).reduce((s,c)=>s+c.total,0);
+  $('est-sum-comp').textContent = fmtBRL(totalComp);
+  $('est-sumario').style.display='grid';
+  $('est-sum-status').textContent = reg ? (reg.completo ? '✅ Completo' : '🔄 Parcial') : '⏳ Não iniciado';
+
+  let html = `<div class="est-grid-header"><span>Produto</span><span>Inicial</span><span>Final</span><span>Consumo</span></div>`;
+  prods.forEach(p=>{
+    const prev = reg?.itens?.find(it=>it.prodId===p.id);
+    const ini  = prev?.inicial ?? '';
+    const fin  = prev?.final   ?? '';
+    const ent  = cpDia[p.id]||0;
+    const travaIni = reg?.completo || (reg && reg.itens?.find(it=>it.prodId===p.id)?.iniTravado);
+    html += `<div class="est-item" id="ei-${p.id}">
+      <div>
+        <div class="est-nome">${p.nome}</div>
+        <div class="est-cat">${p.categoria} · ${p.unidade}${ent>0?` · <b style="color:var(--verde)">+${ent} (compra)</b>`:''}</div>
+      </div>
+      <input class="est-input" type="number" id="ini-${p.id}" value="${ini}" placeholder="0" min="0" step="0.001" ${travaIni?'disabled':''} oninput="calcCons('${p.id}')">
+      <input class="est-input" type="number" id="fin-${p.id}" value="${fin}" placeholder="0" min="0" step="0.001" ${reg?.completo?'disabled':''} oninput="calcCons('${p.id}')">
+      <div class="est-consumo zer" id="con-${p.id}">—</div>
+    </div>`;
+  });
+
+  $('est-tabela').innerHTML = html;
+  $('est-btns').style.display = reg?.completo ? 'none' : 'flex';
+  prods.forEach(p=>calcCons(p.id));
+  atualizarContConsumidores();
+  if (reg?.completo) setStatus('st-estoque','ok','✓ Registro completo. Para editar, exclua e recrie.');
+}
+
+function calcConsVal(prodId) {
+  const data  = $('e-data').value;
+  const cpDia = comprasDodia(data);
+  const ini   = parseFloat($(`ini-${prodId}`)?.value);
+  const fin   = parseFloat($(`fin-${prodId}`)?.value);
+  if (isNaN(ini)||isNaN(fin)) return null;
+  return ini + (cpDia[prodId]||0) - fin;
+}
+
+function calcCons(prodId) {
+  const el = $(`con-${prodId}`); if (!el) return;
+  const val = calcConsVal(prodId);
+  if (val===null) { el.textContent='—'; el.className='est-consumo zer'; return; }
+  el.textContent = val.toFixed(3);
+  el.className = 'est-consumo ' + (val>0?'pos':val<0?'neg':'zer');
+  atualizarContConsumidores();
+}
+
+function atualizarContConsumidores() {
+  const c = ld('produtos').filter(p=>{ const v=calcConsVal(p.id); return v!==null&&v>0; }).length;
+  $('est-sum-cons').textContent = c;
+}
+
+function coletarItensEstoque(soParcial=false) {
+  const data  = $('e-data').value;
+  const prods = ld('produtos').sort((a,b)=>a.nome.localeCompare(b.nome));
+  const cpDia = comprasDodia(data);
+  return prods.map(p=>{
+    const ini = parseFloat($(`ini-${p.id}`)?.value)||0;
+    const fin = soParcial ? null : parseFloat($(`fin-${p.id}`)?.value)||0;
+    const ent = cpDia[p.id]||0;
+    return { prodId: p.id, prodNome: p.nome, unidade: p.unidade, inicial: ini, final: fin, entradas: ent, consumo: fin!==null ? ini+ent-fin : null, iniTravado: true };
+  });
+}
+
+async function salvarParcial() {
+  const data = $('e-data').value;
+  if (!data) return setStatus('st-estoque','err','⚠ Selecione a data.');
+  const itens = coletarItensEstoque(true);
+  const regs  = ld('estoque_diario');
+  const idx   = regs.findIndex(r=>r.data===data);
+  const reg   = { id: idx>=0?regs[idx].id:uid('estoque'), data, itens, completo:false, savedAt:new Date().toISOString() };
+  if (idx>=0) regs[idx]=reg; else regs.push(reg);
+  sv('estoque_diario', regs);
+  carregarEstoque(); renderRegistros();
+  setStatus('st-estoque','ok','✓ Estoque inicial salvo! Campos iniciais travados.');
+  toast('💾 Inicial salvo!','ok');
+}
+
+async function salvarFinal() {
+  const data = $('e-data').value;
+  if (!data) return setStatus('st-estoque','err','⚠ Selecione a data.');
+  const itens = coletarItensEstoque(false);
+  const regs  = ld('estoque_diario');
+  const idx   = regs.findIndex(r=>r.data===data);
+  const reg   = { id: idx>=0?regs[idx].id:uid('estoque'), data, itens, completo:true, savedAt:new Date().toISOString() };
+  if (idx>=0) regs[idx]=reg; else regs.push(reg);
+  sv('estoque_diario', regs);
+  carregarEstoque(); renderRegistros();
+  setStatus('st-estoque','ok','✓ Registro completo salvo!');
+  const ok = await enviarSheets('estoque', reg);
+  toast(ok ? '☁ Estoque enviado ao Sheets!' : '⚠ Salvo localmente. Sheets offline.', ok?'ok':'warn');
+}
+
+function excluirRegistro(id) {
+  if (!confirm('Excluir este registro?')) return;
+  sv('estoque_diario', ld('estoque_diario').filter(r=>r.id!==id));
+  renderRegistros(); carregarEstoque();
+  toast('Registro excluído.','warn');
+}
+
+function renderRegistros() {
+  const regs = ld('estoque_diario').sort((a,b)=>b.data.localeCompare(a.data));
+  const el = $('lista-registros');
+  if (!regs.length) { el.innerHTML='<div class="empty"><div class="empty-icon">📅</div>Nenhum registro salvo.</div>'; return; }
+  el.innerHTML = regs.map(r=>`
+    <div class="compra-card">
+      <div class="compra-head" onclick="toggleCompra('rg-${r.id}')">
+        <div>
+          <div class="compra-info-top">${fmtData(r.data)} ${r.completo?'<span style="color:var(--verde);font-size:12px">✅ Completo</span>':'<span style="color:var(--warn);font-size:12px">🔄 Parcial</span>'}</div>
+          <div class="compra-info-sub">${r.itens.filter(it=>it.consumo!==null&&it.consumo>0).length} produto(s) com consumo</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();excluirRegistro('${r.id}')">🗑</button>
+      </div>
+      <div class="compra-body" id="rg-${r.id}">
+        <div class="table-wrap"><table>
+          <thead><tr><th>Produto</th><th>Un</th><th>Inicial</th><th>Entradas</th><th>Final</th><th>Consumo</th></tr></thead>
+          <tbody>${r.itens.filter(it=>it.inicial||it.final||it.entradas).map(it=>`
+            <tr>
+              <td class="td-nome">${it.prodNome}</td>
+              <td><span class="badge badge-un">${it.unidade}</span></td>
+              <td>${it.inicial}</td>
+              <td style="color:var(--verde);font-weight:700">${it.entradas||0}</td>
+              <td>${it.final??'—'}</td>
+              <td class="td-valor" style="color:${it.consumo>0?'var(--verde)':it.consumo<0?'var(--erro)':'var(--sub)'}">${it.consumo!==null?it.consumo.toFixed(3):'—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table></div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// RELATÓRIOS EXCEL
+// ═══════════════════════════════════════════
+function initRelatorios() {
+  const h = hoje();
+  const mesInicio = h.slice(0,8)+'01';
+  if (!$('rel-comp-de').value)  $('rel-comp-de').value  = mesInicio;
+  if (!$('rel-comp-ate').value) $('rel-comp-ate').value = h;
+  if (!$('rel-est-de').value)   $('rel-est-de').value   = mesInicio;
+  if (!$('rel-est-ate').value)  $('rel-est-ate').value  = h;
+}
+
+function baixarXlsx(wb, nome) {
+  XLSX.writeFile(wb, `${nome}_${hoje()}.xlsx`);
+  setStatus('st-relatorio','ok',`✅ Arquivo "${nome}_${hoje()}.xlsx" baixado!`);
+}
+
+function exportarCompras() {
+  const de  = $('rel-comp-de').value;
+  const ate = $('rel-comp-ate').value;
+  const compras = ld('compras').filter(c=> (!de||c.data>=de) && (!ate||c.data<=ate))
+    .sort((a,b)=>a.data.localeCompare(b.data));
+
+  if (!compras.length) { setStatus('st-relatorio','warn','⚠ Nenhuma compra no período.'); return; }
+
+  const wsComp = XLSX.utils.aoa_to_sheet([
+    ['ID','Data','Fornecedor','Pagamento','Dt. Pagamento','Total (R$)'],
+    ...compras.map(c=>[c.id, fmtData(c.data), c.fornNome, c.pagamento, c.dataPagamento?fmtData(c.dataPagamento):'', c.total])
+  ]);
+
+  const itensRows = [['ID Compra','Nº Compra','Data','Fornecedor','Pagamento','Dt. Pagamento','Produto','Unidade','Quantidade','Custo Unit. (R$)','Total Item (R$)']];
+  compras.forEach(c=>{
+    c.itens.forEach(it=>itensRows.push([c.id, c.id, fmtData(c.data), c.fornNome, c.pagamento, c.dataPagamento?fmtData(c.dataPagamento):'', it.prodNome, it.un, it.qtd, it.custo, it.total]));
+  });
+  const wsItens = XLSX.utils.aoa_to_sheet(itensRows);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsComp,  'Compras');
+  XLSX.utils.book_append_sheet(wb, wsItens, 'Itens_Compras');
+  baixarXlsx(wb, 'Compras');
+}
+
+function exportarEstoque() {
+  const de  = $('rel-est-de').value;
+  const ate = $('rel-est-ate').value;
+  const regs = ld('estoque_diario').filter(r=> (!de||r.data>=de) && (!ate||r.data<=ate))
+    .sort((a,b)=>a.data.localeCompare(b.data));
+
+  if (!regs.length) { setStatus('st-relatorio','warn','⚠ Nenhum registro no período.'); return; }
+
+  const rows = [['Data','Produto','Unidade','Inicial','Entradas','Final','Consumo','Status']];
+  regs.forEach(r=>{
+    r.itens.filter(it=>it.inicial||it.final).forEach(it=>{
+      rows.push([fmtData(r.data), it.prodNome, it.unidade, it.inicial, it.entradas||0, it.final??'', it.consumo??'', r.completo?'Completo':'Parcial']);
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Estoque_Diario');
+  baixarXlsx(wb, 'Estoque');
+}
+
+function exportarProdutos() {
+  const prods = ld('produtos').sort((a,b)=>a.nome.localeCompare(b.nome));
+  if (!prods.length) { setStatus('st-relatorio','warn','⚠ Nenhum produto cadastrado.'); return; }
+
+  const rows = [['Nome','Categoria','Unidade','Último Preço (R$)','Última Compra Forn.','Penúltima Compra Forn.']];
+  prods.forEach(p=>{
+    const hist = (p.historico||[]).slice(-2);
+    rows.push([
+      p.nome, p.categoria, p.unidade,
+      p.ultimoPreco ?? '',
+      hist[1] ? `${hist[1].fornecedor} — ${fmtBRL(hist[1].preco)} (${fmtData(hist[1].data)})` : '',
+      hist[0] ? `${hist[0].fornecedor} — ${fmtBRL(hist[0].preco)} (${fmtData(hist[0].data)})` : ''
+    ]);
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Produtos');
+  baixarXlsx(wb, 'Produtos');
+}
+
+function exportarFornecedores() {
+  const forns = ld('fornecedores');
+  if (!forns.length) { setStatus('st-relatorio','warn','⚠ Nenhum fornecedor cadastrado.'); return; }
+
+  const rows = [['Nome','Contato','Observações']];
+  forns.forEach(f=>rows.push([f.nome, f.contato||'', f.obs||'']));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Fornecedores');
+  baixarXlsx(wb, 'Fornecedores');
+}
+
+function exportarTudo() {
+  const compras = ld('compras').sort((a,b)=>a.data.localeCompare(b.data));
+  const regs    = ld('estoque_diario').sort((a,b)=>a.data.localeCompare(b.data));
+  const prods   = ld('produtos').sort((a,b)=>a.nome.localeCompare(b.nome));
+  const forns   = ld('fornecedores');
+
+  const wb = XLSX.utils.book_new();
+
+  // Compras
+  const wsComp = XLSX.utils.aoa_to_sheet([
+    ['ID','Data','Fornecedor','Pagamento','Dt. Pagamento','Total (R$)'],
+    ...compras.map(c=>[c.id, fmtData(c.data), c.fornNome, c.pagamento, c.dataPagamento?fmtData(c.dataPagamento):'', c.total])
+  ]);
+  XLSX.utils.book_append_sheet(wb, wsComp, 'Compras');
+
+  // Itens Compras
+  const itensRows = [['ID Compra','Data','Fornecedor','Pagamento','Dt. Pagamento','Produto','Unidade','Qtd','Custo Unit.','Total Item']];
+  compras.forEach(c=>c.itens.forEach(it=>itensRows.push([c.id, fmtData(c.data), c.fornNome, c.pagamento, c.dataPagamento?fmtData(c.dataPagamento):'', it.prodNome, it.un, it.qtd, it.custo, it.total])));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(itensRows), 'Itens_Compras');
+
+  // Estoque
+  const estRows = [['Data','Produto','Unidade','Inicial','Entradas','Final','Consumo','Status']];
+  regs.forEach(r=>r.itens.filter(it=>it.inicial||it.final).forEach(it=>
+    estRows.push([fmtData(r.data), it.prodNome, it.unidade, it.inicial, it.entradas||0, it.final??'', it.consumo??'', r.completo?'Completo':'Parcial'])
+  ));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(estRows), 'Estoque_Diario');
+
+  // Produtos
+  const prodRows = [['Nome','Categoria','Unidade','Último Preço']];
+  prods.forEach(p=>prodRows.push([p.nome, p.categoria, p.unidade, p.ultimoPreco??'']));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(prodRows), 'Produtos');
+
+  // Fornecedores
+  const fornRows = [['Nome','Contato','Observações']];
+  forns.forEach(f=>fornRows.push([f.nome, f.contato||'', f.obs||'']));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(fornRows), 'Fornecedores');
+
+  baixarXlsx(wb, 'MeuAcai_Relatorio_Completo');
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+renderProdutos();
+$('c-data').value = hoje();
+$('e-data').value = hoje();
+if (getSheetsUrl()) {
+  setSheetsStatus('ok');
+  // Sincroniza automaticamente ao abrir se tiver URL
+  setTimeout(() => sincronizarAgora(), 1000);
+}
+</script>
+</body>
+</html>
